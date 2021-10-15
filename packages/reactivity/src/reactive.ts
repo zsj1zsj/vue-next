@@ -37,7 +37,7 @@ const enum TargetType {
   COMMON = 1,
   COLLECTION = 2
 }
-
+//如果rawtype为Oject或Array返回Common, 如果为Map,Set,WeakMap,WeakSet返回Collection，否则返回Invalid
 function targetTypeMap(rawType: string) {
   switch (rawType) {
     case 'Object':
@@ -53,6 +53,7 @@ function targetTypeMap(rawType: string) {
   }
 }
 
+//判断该对象的类别，如果Object,Array,Map等
 function getTargetType(value: Target) {
   return value[ReactiveFlags.SKIP] || !Object.isExtensible(value)
     ? TargetType.INVALID
@@ -93,8 +94,8 @@ export function reactive(target: object) {
   return createReactiveObject(
     target,
     false,
-    mutableHandlers,
-    mutableCollectionHandlers,
+    mutableHandlers, //当对象为object时的handler
+    mutableCollectionHandlers, //当对象为collection时的handler
     reactiveMap
   )
 }
@@ -205,15 +206,18 @@ function createReactiveObject(
     return existingProxy
   }
   // only a whitelist of value types can be observed.
+  //判断的对象类别，如果为invalid 则返回对象，invalid的值为2
   const targetType = getTargetType(target)
   if (targetType === TargetType.INVALID) {
     return target
   }
+  //创建proxy， 根据TargetType.COLLECTION判断是否为collection，以传入hanlders
+  //TargetType.Collection是个enum类，且值为2.
   const proxy = new Proxy(
     target,
     targetType === TargetType.COLLECTION ? collectionHandlers : baseHandlers
   )
-  proxyMap.set(target, proxy)
+  proxyMap.set(target, proxy) //对应reactiveMap, shallowReactiveMap, readonlyMap, shallowReadonlyMap等
   return proxy
 }
 
